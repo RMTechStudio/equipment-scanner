@@ -57,6 +57,9 @@
         }
         button:disabled { background-color: #9ca3af; cursor: not-allowed; }
         #msg { margin-top: 16px; font-size: 0.9rem; font-weight: 600; color: #ef4444; min-height: 20px; }
+        .register-box { margin-top: 20px; font-size: 0.9rem; color: #4b5563; }
+        .register-box a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
+        .register-box a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -75,6 +78,9 @@
         <button type="submit" id="submit-btn">登入</button>
     </form>
     <div id="msg"></div>
+    <div class="register-box">
+        還沒有帳號嗎？<a href="register.html">立即建立帳號</a>
+    </div>
 </div>
 
 <script>
