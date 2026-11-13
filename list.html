@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>已借出設備清單</title>
+    <title>借出設備清單</title>
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -12,9 +12,7 @@
             --text-main: #1f2937;
             --text-sub: #6b7280;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -25,7 +23,6 @@
             min-height: 100vh;
             padding: 16px;
         }
-
         .card {
             background: var(--card-bg);
             width: 100%;
@@ -35,95 +32,55 @@
             padding: 24px;
             margin-top: 10px;
         }
-
-        /* 頂部列樣式：返回首頁按鈕 */
-        .top-bar {
+        .user-bar {
             display: flex;
-            justify-content: flex-start;
-            margin-bottom: 16px;
-        }
-
-        .back-btn {
-            display: inline-flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background-color: var(--primary-color);
-            color: #ffffff !important;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-            transition: opacity 0.2s;
-        }
-
-        .back-btn:hover {
-            opacity: 0.9;
-        }
-
-        h2 { 
-            font-size: 1.3rem; 
-            text-align: center;
             margin-bottom: 16px;
-        }
-
-        .refresh-btn {
-            width: 100%;
-            padding: 12px;
-            background-color: #e5e7eb;
-            color: var(--text-main);
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-
-        .equipment-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.95rem;
-        }
-
-        .equipment-table th, .equipment-table td {
-            padding: 12px;
+            padding-bottom: 12px;
             border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9rem;
         }
-
-        .equipment-table th {
-            background-color: #f9fafb;
-            color: var(--text-sub);
+        .top-bar { display: flex; justify-content: flex-start; margin-bottom: 16px; }
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; background-color: var(--primary-color);
+            color: #ffffff !important; text-decoration: none;
+            font-size: 0.9rem; font-weight: 600; border-radius: 8px;
         }
-
+        h2 { font-size: 1.3rem; text-align: center; margin-bottom: 16px; }
+        .refresh-btn {
+            width: 100%; padding: 12px; background-color: #e5e7eb;
+            color: var(--text-main); border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+            cursor: pointer; margin-bottom: 20px;
+        }
+        .equipment-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+        .equipment-table th, .equipment-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .equipment-table th { background-color: #f9fafb; color: var(--text-sub); }
         .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background-color: #fef3c7;
-            color: #92400e;
+            display: inline-block; padding: 4px 8px; border-radius: 6px;
+            font-size: 0.8rem; font-weight: 600; background-color: #fef3c7; color: #92400e;
         }
-
-        .empty-msg {
-            text-align: center;
-            color: var(--text-sub);
-            padding: 30px 0;
-        }
+        .empty-msg { text-align: center; color: var(--text-sub); padding: 30px 0; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <!-- 頂部返回首頁按鈕 -->
+    <div class="user-bar">
+        <div>
+            👤 <strong id="user-display"></strong>
+            <span id="role-badge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; margin-left: 4px;"></span>
+        </div>
+        <button onclick="logout()" style="background: #fee2e2; color: #991b1b; border: none; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer;">登出</button>
+    </div>
+
     <div class="top-bar">
         <a href="index.html" class="back-btn">🏠 返回首頁</a>
     </div>
 
-    <h2>📋 已借出設備清單</h2>
+    <h2 id="page-title">📋 借出設備清單</h2>
     <button class="refresh-btn" onclick="loadBorrowedList()">🔄 重新整理清單</button>
 
     <div id="list-container">
@@ -132,17 +89,53 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz8SKhCct8XraaHN0cgbvKe6FW6gDaRInr6i8fX28NY4HBh5xw1h27TqBaWD09hkOW-Cw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
+    const EXPIRE_TIME = 8 * 60 * 60 * 1000;
+
+    const currentUser = localStorage.getItem("equipment_user");
+    const currentRole = localStorage.getItem("equipment_role");
+    const currentPermission = localStorage.getItem("equipment_permission") || "一般";
+    const loginTime = localStorage.getItem("equipment_login_timestamp");
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = "login.html";
+    }
+
+    if (!currentUser || !currentRole || !loginTime || (Date.now() - Number(loginTime) > EXPIRE_TIME)) {
+        logout();
+    } else {
+        document.getElementById("user-display").innerText = currentUser;
+        const badge = document.getElementById("role-badge");
+        const pageTitle = document.getElementById("page-title");
+
+        if (currentPermission === "管理員") {
+            badge.innerText = `${currentRole} · 管理員`;
+            badge.style.backgroundColor = "#fee2e2";
+            badge.style.color = "#991b1b";
+            pageTitle.innerText = "📋 全部已借出設備清單（管理員）";
+        } else {
+            badge.innerText = currentRole;
+            badge.style.backgroundColor = "#e0e7ff";
+            badge.style.color = "#3730a3";
+            pageTitle.innerText = "📋 我目前借用的設備";
+        }
+    }
 
     function loadBorrowedList() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="empty-msg">資料載入中...</div>';
 
-        fetch(`${API_URL}?action=getBorrowedList`, { method: "GET", redirect: "follow" })
+        const fetchUrl = `${API_URL}?action=getBorrowedList&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&permission=${encodeURIComponent(currentPermission)}`;
+
+        fetch(fetchUrl, { method: "GET", redirect: "follow" })
             .then(res => res.json())
             .then(data => {
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<div class="empty-msg">🎉 目前沒有任何借出中的設備！</div>';
+                    const emptyText = currentPermission === "管理員" 
+                        ? "🎉 目前全系統沒有任何借出中的設備！" 
+                        : "🎉 你目前沒有任何借用中的設備！";
+                    container.innerHTML = `<div class="empty-msg">${emptyText}</div>`;
                     return;
                 }
 
@@ -150,8 +143,8 @@
                     <table class="equipment-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>廠牌 / 名稱</th>
+                                <th>ID / 設備</th>
+                                <th>借用資訊</th>
                                 <th>狀態</th>
                             </tr>
                         </thead>
@@ -160,10 +153,19 @@
 
                 data.forEach(item => {
                     const fullName = (item.brand ? item.brand + ' ' : '') + item.name;
+                    const borrowerInfo = item.borrower ? `👤 ${item.borrower}` : '';
+                    const timeInfo = item.borrowTime ? `<div style="font-size:0.8rem; color:#6b7280; margin-top:2px;">🕒 ${item.borrowTime}</div>` : '';
+
                     html += `
                         <tr>
-                            <td><b>${item.id}</b></td>
-                            <td>${fullName}</td>
+                            <td>
+                                <b>${item.id}</b>
+                                <div style="margin-top:2px;">${fullName}</div>
+                            </td>
+                            <td>
+                                ${borrowerInfo}
+                                ${timeInfo}
+                            </td>
                             <td><span class="badge">${item.status}</span></td>
                         </tr>
                     `;
@@ -178,7 +180,6 @@
             });
     }
 
-    // 頁面開啟時自動執行
     loadBorrowedList();
 </script>
 </body>
