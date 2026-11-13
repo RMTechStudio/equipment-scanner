@@ -14,9 +14,7 @@
             --text-main: #1f2937;
             --text-sub: #6b7280;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -27,7 +25,6 @@
             min-height: 100vh;
             padding: 16px;
         }
-
         .card {
             background: var(--card-bg);
             width: 100%;
@@ -38,14 +35,17 @@
             margin-top: 10px;
             text-align: center;
         }
-
-        /* 導覽列連結 */
-        .nav-links {
+        .user-bar {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9rem;
         }
-
+        h2 { margin-bottom: 16px; font-size: 1.4rem; }
+        .nav-links { display: flex; gap: 10px; margin-bottom: 20px; }
         .nav-btn {
             flex: 1;
             padding: 10px;
@@ -54,70 +54,24 @@
             text-decoration: none;
             font-size: 0.95rem;
             text-align: center;
-            transition: all 0.2s;
         }
-
-        .nav-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .nav-btn.external {
-            background-color: #e5e7eb;
-            color: var(--text-main);
-            border: 1px solid #d1d5db;
-        }
-
-        .nav-btn.external:hover {
-            background-color: #d1d5db;
-        }
-
-        /* 借歸還切換 */
-        .mode-toggle {
-            display: flex;
-            background: #e5e7eb;
-            border-radius: 10px;
-            padding: 4px;
-            margin-bottom: 16px;
-        }
-
+        .nav-btn.active { background-color: var(--primary-color); color: white; }
+        .nav-btn.external { background-color: #e5e7eb; color: var(--text-main); border: 1px solid #d1d5db; }
+        .mode-toggle { display: flex; background: #e5e7eb; border-radius: 10px; padding: 4px; margin-bottom: 16px; }
         .mode-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            background: transparent;
-            color: var(--text-sub);
+            flex: 1; padding: 10px; border: none; border-radius: 8px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            background: transparent; color: var(--text-sub);
         }
-
         .mode-btn.active-borrow { background: var(--primary-color); color: white; }
         .mode-btn.active-return { background: var(--success-color); color: white; }
-
-        select {
-            width: 100%;
-            padding: 10px;
-            font-size: 0.9rem;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            margin-bottom: 16px;
-        }
-
+        select { width: 100%; padding: 10px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #d1d5db; margin-bottom: 16px; }
         #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
-
         #result {
-            margin-top: 16px;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            white-space: pre-wrap;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
+            margin-top: 16px; padding: 14px; border-radius: 10px;
+            font-size: 0.95rem; font-weight: 600; white-space: pre-wrap;
+            background: #f9fafb; border: 1px solid #e5e7eb;
         }
-
         .status-loading { color: var(--primary-color); background: #eef2ff !important; }
         .status-success { color: #065f46; background: #d1fae5 !important; }
         .status-error { color: #991b1b; background: #fee2e2 !important; }
@@ -126,12 +80,19 @@
 <body>
 
 <div class="card">
+    <div class="user-bar">
+        <div>
+            👤 <strong id="user-display"></strong>
+            <span id="role-badge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; margin-left: 4px;"></span>
+        </div>
+        <button onclick="logout()" style="background: #fee2e2; color: #991b1b; border: none; padding: 5px 12px; border-radius: 6px; font-weight: 600; cursor: pointer;">登出</button>
+    </div>
+
     <h2>📷 設備掃描借還系統</h2>
 
-    <!-- 頂部導覽：點擊右邊會開啟新分頁 -->
     <div class="nav-links">
         <span class="nav-btn active">📷 掃描借還</span>
-        <a href="list.html" target="_blank" class="nav-btn external">📋 開啟借出清單 ↗</a>
+        <a href="list.html" id="list-link" target="_blank" rel="noopener noreferrer" class="nav-btn external">📋 借出清單 ↗</a>
     </div>
 
     <div class="mode-toggle">
@@ -148,7 +109,38 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz8SKhCct8XraaHN0cgbvKe6FW6gDaRInr6i8fX28NY4HBh5xw1h27TqBaWD09hkOW-Cw/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKOj-VImQJKXeHA08DHCWPQoROM6m578I7cGvBMjW6bcDCiXnZ74jH7yMYVZhHYcMI4w/exec";
+    const EXPIRE_TIME = 8 * 60 * 60 * 1000;
+
+    const currentUser = localStorage.getItem("equipment_user");
+    const currentRole = localStorage.getItem("equipment_role");
+    const currentPermission = localStorage.getItem("equipment_permission") || "一般";
+    const loginTime = localStorage.getItem("equipment_login_timestamp");
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = "login.html";
+    }
+
+    if (!currentUser || !currentRole || !loginTime || (Date.now() - Number(loginTime) > EXPIRE_TIME)) {
+        logout();
+    } else {
+        document.getElementById("user-display").innerText = currentUser;
+        const badge = document.getElementById("role-badge");
+        const listLink = document.getElementById("list-link");
+
+        if (currentPermission === "管理員") {
+            badge.innerText = `${currentRole} · 管理員`;
+            badge.style.backgroundColor = "#fee2e2";
+            badge.style.color = "#991b1b";
+            listLink.innerText = "📋 全部借出清單 ↗";
+        } else {
+            badge.innerText = currentRole;
+            badge.style.backgroundColor = "#e0e7ff";
+            badge.style.color = "#3730a3";
+            listLink.innerText = "📋 我的借出清單 ↗";
+        }
+    }
 
     let currentMode = "borrow";
     let isProcessing = false;
@@ -181,7 +173,9 @@
         const actionText = currentMode === 'borrow' ? '借用' : '歸還';
         updateStatusText(`讀取成功！ID: ${targetId}\n處理【${actionText}】中...`, 'status-loading');
 
-        fetch(`${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}`, {
+        const requestUrl = `${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}`;
+
+        fetch(requestUrl, {
             method: "GET",
             redirect: "follow"
         })
