@@ -77,12 +77,12 @@
     <form id="register-form">
         <div class="input-group">
             <label for="username">帳號</label>
-            <input type="text" id="username" required pattern="[A-Za-z]+" title="帳號只能輸入英文字母" placeholder="請設定英文帳號">
+            <input type="text" id="username" required pattern="[A-Za-z0-9]+" title="帳號只能輸入英文字母與數字" placeholder="請設定英文帳號">
             <span class="hint">※ 僅限英文字母與數字（不可包含符號或空白）</span>
         </div>
         <div class="input-group">
             <label for="password">密碼</label>
-            <input type="password" id="password" required minlength="6" pattern="[A-Za-z]{6,}" title="密碼只能輸入英文字母，且至少 6 個字" placeholder="請設定英文密碼（至少 6 碼）">
+            <input type="password" id="password" required minlength="6" pattern="[A-Za-z0-9]{6,}" title="密碼只能輸入英文字母與數字，且至少 6 個字" placeholder="請設定密碼（至少 6 碼）">
             <span class="hint">※ 僅限英文字母與數字，長度至少 6 個字</span>
         </div>
         <div class="input-group">
