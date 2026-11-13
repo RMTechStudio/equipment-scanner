@@ -83,7 +83,7 @@
         <div class="input-group">
             <label for="password">密碼</label>
             <input type="password" id="password" required minlength="6" pattern="[A-Za-z]{6,}" title="密碼只能輸入英文字母，且至少 6 個字" placeholder="請設定英文密碼（至少 6 碼）">
-            <span class="hint">※ 僅限英文字母，長度至少 6 個字</span>
+            <span class="hint">※ 僅限英文字母與數字，長度至少 6 個字</span>
         </div>
         <div class="input-group">
             <label for="name">真實姓名</label>
@@ -115,14 +115,14 @@
         const btn = document.getElementById("submit-btn");
         const msg = document.getElementById("msg");
 
-        if (!/^[A-Za-z]+$/.test(username)) {
+        if (!/^[A-Za-z0-9]+$/.test(username)) {
             msg.style.color = "#ef4444";
-            msg.innerText = "❌ 帳號只能輸入英文字母！";
+            msg.innerText = "❌ 帳號只能輸入英文字母或數字！";
             return;
         }
-        if (!/^[A-Za-z]{6,}$/.test(password)) {
+        if (!/^[A-Za-z0-9]{6,}$/.test(password)) {
             msg.style.color = "#ef4444";
-            msg.innerText = "❌ 密碼只能輸入英文字母，且至少 6 個字！";
+            msg.innerText = "❌ 密碼只能輸入英文字母或數字，且至少 6 個字！";
             return;
         }
 
