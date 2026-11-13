@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統登入 - 設備借還系統</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 32px 24px;
+            text-align: center;
+        }
+        h2 { margin-bottom: 24px; font-size: 1.5rem; }
+        .input-group { margin-bottom: 16px; text-align: left; }
+        label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary-color); }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        #msg { margin-top: 16px; font-size: 0.9rem; font-weight: 600; color: #ef4444; min-height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔐 設備系統登入</h2>
+    <form id="login-form">
+        <div class="input-group">
+            <label for="username">帳號</label>
+            <input type="text" id="username" required placeholder="請輸入帳號">
+        </div>
+        <div class="input-group">
+            <label for="password">密碼</label>
+            <input type="password" id="password" required placeholder="請輸入密碼">
+        </div>
+        <button type="submit" id="submit-btn">登入</button>
+    </form>
+    <div id="msg"></div>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
+    const EXPIRE_TIME = 8 * 60 * 60 * 1000; // 8 小時自動過期
+
+    const savedUser = localStorage.getItem("equipment_user");
+    const savedTime = localStorage.getItem("equipment_login_timestamp");
+
+    if (savedUser && savedTime && (Date.now() - Number(savedTime) < EXPIRE_TIME)) {
+        window.location.href = "index.html";
+    } else {
+        localStorage.clear();
+    }
+
+    document.getElementById("login-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const btn = document.getElementById("submit-btn");
+        const msg = document.getElementById("msg");
+
+        btn.disabled = true;
+        btn.innerText = "驗證中...";
+        msg.innerText = "";
+
+        fetch(`${API_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`, {
+            method: "GET",
+            redirect: "follow"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.setItem("equipment_user", data.name);
+                localStorage.setItem("equipment_role", data.role);
+                localStorage.setItem("equipment_permission", data.permission);
+                localStorage.setItem("equipment_login_timestamp", Date.now().toString());
+                window.location.href = "index.html";
+            } else {
+                msg.innerText = data.message || "登入失敗";
+                btn.disabled = false;
+                btn.innerText = "登入";
+            }
+        })
+        .catch(err => {
+            msg.innerText = "系統連線錯誤，請稍後再試";
+            btn.disabled = false;
+            btn.innerText = "登入";
+        });
+    });
+</script>
+</body>
+</html>
