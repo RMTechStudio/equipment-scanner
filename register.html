@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建立帳號 - 設備借還系統</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 32px 24px;
+            text-align: center;
+        }
+        h2 { margin-bottom: 24px; font-size: 1.5rem; }
+        .input-group { margin-bottom: 16px; text-align: left; }
+        label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+        .hint { font-size: 0.78rem; color: #6b7280; margin-top: 4px; display: block; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            background-color: #fff;
+        }
+        input:focus, select:focus { border-color: var(--primary-color); }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        #msg { margin-top: 16px; font-size: 0.9rem; font-weight: 600; min-height: 20px; }
+        .login-link {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .login-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>📝 建立新帳號</h2>
+    <form id="register-form">
+        <div class="input-group">
+            <label for="username">帳號</label>
+            <input type="text" id="username" required pattern="[A-Za-z]+" title="帳號只能輸入英文字母" placeholder="請設定英文帳號">
+            <span class="hint">※ 僅限英文字母（不可包含數字或符號）</span>
+        </div>
+        <div class="input-group">
+            <label for="password">密碼</label>
+            <input type="password" id="password" required minlength="6" pattern="[A-Za-z]{6,}" title="密碼只能輸入英文字母，且至少 6 個字" placeholder="請設定英文密碼（至少 6 碼）">
+            <span class="hint">※ 僅限英文字母，長度至少 6 個字</span>
+        </div>
+        <div class="input-group">
+            <label for="name">真實姓名</label>
+            <input type="text" id="name" required placeholder="請輸入姓名（借用紀錄顯示用）">
+        </div>
+        <div class="input-group">
+            <label for="role">身分別</label>
+            <select id="role" required>
+                <option value="學生">學生</option>
+                <option value="老師">老師</option>
+            </select>
+        </div>
+        <button type="submit" id="submit-btn">確認註冊</button>
+    </form>
+    <div id="msg"></div>
+    <a href="login.html" class="login-link">已有帳號？返回登入頁面</a>
+</div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
+
+    document.getElementById("register-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+        const name = document.getElementById("name").value.trim();
+        const role = document.getElementById("role").value;
+        
+        const btn = document.getElementById("submit-btn");
+        const msg = document.getElementById("msg");
+
+        if (!/^[A-Za-z]+$/.test(username)) {
+            msg.style.color = "#ef4444";
+            msg.innerText = "❌ 帳號只能輸入英文字母！";
+            return;
+        }
+        if (!/^[A-Za-z]{6,}$/.test(password)) {
+            msg.style.color = "#ef4444";
+            msg.innerText = "❌ 密碼只能輸入英文字母，且至少 6 個字！";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "建立帳號中...";
+        msg.innerText = "";
+
+        const reqUrl = `${API_URL}?action=register&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}`;
+
+        fetch(reqUrl, {
+            method: "GET",
+            redirect: "follow"
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                msg.style.color = "#10b981";
+                msg.innerText = data.message + " 2 秒後自動跳轉至登入頁...";
+                setTimeout(() => {
+                    window.location.href = "login.html";
+                }, 2000);
+            } else {
+                msg.style.color = "#ef4444";
+                msg.innerText = data.message || "註冊失敗";
+                btn.disabled = false;
+                btn.innerText = "確認註冊";
+            }
+        })
+        .catch(err => {
+            msg.style.color = "#ef4444";
+            msg.innerText = "系統連線錯誤，請稍後再試";
+            btn.disabled = false;
+            btn.innerText = "確認註冊";
+        });
+    });
+</script>
+</body>
+</html>
