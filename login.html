@@ -34,6 +34,11 @@
         h2 { margin-bottom: 24px; font-size: 1.5rem; }
         .input-group { margin-bottom: 16px; text-align: left; }
         label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
         input {
             width: 100%;
             padding: 12px;
@@ -42,8 +47,26 @@
             font-size: 1rem;
             outline: none;
         }
+        .password-wrapper input {
+            padding-right: 44px;
+        }
         input:focus { border-color: var(--primary-color); }
-        button {
+        .toggle-eye {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            width: auto;
+            padding: 4px;
+            margin: 0;
+            cursor: pointer;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-eye:hover { color: var(--primary-color); }
+        button[type="submit"] {
             width: 100%;
             padding: 12px;
             background-color: var(--primary-color);
@@ -55,7 +78,7 @@
             cursor: pointer;
             margin-top: 8px;
         }
-        button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        button[type="submit"]:disabled { background-color: #9ca3af; cursor: not-allowed; }
         #msg { margin-top: 16px; font-size: 0.9rem; font-weight: 600; color: #ef4444; min-height: 20px; }
         .register-box { margin-top: 20px; font-size: 0.9rem; color: #4b5563; }
         .register-box a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
@@ -73,7 +96,16 @@
         </div>
         <div class="input-group">
             <label for="password">密碼</label>
-            <input type="password" id="password" required placeholder="請輸入密碼">
+            <div class="password-wrapper">
+                <input type="password" id="password" required placeholder="請輸入密碼">
+                <button type="button" class="toggle-eye" id="toggle-pwd" aria-label="顯示或隱藏密碼">
+                    <!-- 預設閉眼圖示 -->
+                    <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </button>
+            </div>
         </div>
         <button type="submit" id="submit-btn">登入</button>
     </form>
@@ -84,8 +116,26 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
-    const EXPIRE_TIME = 8 * 60 * 60 * 1000; // 8 小時自動過期
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKOj-VImQJKXeHA08DHCWPQoROM6m578I7cGvBMjW6bcDCiXnZ74jH7yMYVZhHYcMI4w/exec";
+    const EXPIRE_TIME = 8 * 60 * 60 * 1000;
+
+    // 密碼顯示/隱藏切換
+    const pwdInput = document.getElementById("password");
+    const toggleBtn = document.getElementById("toggle-pwd");
+    const eyeIcon = document.getElementById("eye-icon");
+
+    const openEyeSVG = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+    const closedEyeSVG = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+
+    toggleBtn.addEventListener("click", function() {
+        if (pwdInput.type === "password") {
+            pwdInput.type = "text";
+            eyeIcon.innerHTML = openEyeSVG;
+        } else {
+            pwdInput.type = "password";
+            eyeIcon.innerHTML = closedEyeSVG;
+        }
+    });
 
     const savedUser = localStorage.getItem("equipment_user");
     const savedTime = localStorage.getItem("equipment_login_timestamp");
@@ -99,7 +149,7 @@
     document.getElementById("login-form").addEventListener("submit", function(e) {
         e.preventDefault();
         const username = document.getElementById("username").value;
-        const password = document.getElementById("password").value;
+        const password = pwdInput.value;
         const btn = document.getElementById("submit-btn");
         const msg = document.getElementById("msg");
 
