@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>借出設備清單</title>
+    <title>設備管理與借出清單</title>
     <style>
         :root {
             --primary-color: #4f46e5;
@@ -26,7 +26,7 @@
         .card {
             background: var(--card-bg);
             width: 100%;
-            max-width: 600px;
+            max-width: 680px;
             border-radius: 16px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             padding: 24px;
@@ -49,19 +49,62 @@
             font-size: 0.9rem; font-weight: 600; border-radius: 8px;
         }
         h2 { font-size: 1.3rem; text-align: center; margin-bottom: 16px; }
+        
+        /* 管理員篩選標籤 */
+        .filter-tabs {
+            display: none;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px 6px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-sub);
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
         .refresh-btn {
-            width: 100%; padding: 12px; background-color: #e5e7eb;
+            width: 100%; padding: 10px; background-color: #e5e7eb;
             color: var(--text-main); border: 1px solid #d1d5db;
-            border-radius: 8px; font-size: 0.95rem; font-weight: 600;
-            cursor: pointer; margin-bottom: 20px;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; margin-bottom: 16px;
         }
-        .equipment-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
-        .equipment-table th, .equipment-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        .equipment-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .equipment-table th, .equipment-table td { padding: 12px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
         .equipment-table th { background-color: #f9fafb; color: var(--text-sub); }
-        .badge {
-            display: inline-block; padding: 4px 8px; border-radius: 6px;
-            font-size: 0.8rem; font-weight: 600; background-color: #fef3c7; color: #92400e;
+        
+        /* 狀態徽章顏色 */
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+        .badge-borrowed { background-color: #fef3c7; color: #92400e; }
+        .badge-available { background-color: #d1fae5; color: #065f46; }
+        .badge-repair { background-color: #fee2e2; color: #991b1b; }
+        .badge-lost { background-color: #374151; color: #ffffff; }
+
+        /* 管理員操作按鈕 */
+        .action-btn {
+            padding: 5px 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+            display: inline-block;
         }
+        .btn-fix { background-color: #10b981; color: white; }
+        .btn-broken { background-color: #ef4444; color: white; }
+        .btn-lost { background-color: #4b5563; color: white; }
+
         .empty-msg { text-align: center; color: var(--text-sub); padding: 30px 0; }
     </style>
 </head>
@@ -81,6 +124,14 @@
     </div>
 
     <h2 id="page-title">📋 借出設備清單</h2>
+
+    <!-- 管理員專用篩選列 -->
+    <div class="filter-tabs" id="admin-tabs">
+        <button class="tab-btn active" onclick="switchFilter('borrowed', this)">📤 借出中</button>
+        <button class="tab-btn" onclick="switchFilter('issue', this)">🔧 維修 / 遺失</button>
+        <button class="tab-btn" onclick="switchFilter('all', this)">📦 全部設備</button>
+    </div>
+
     <button class="refresh-btn" onclick="loadBorrowedList()">🔄 重新整理清單</button>
 
     <div id="list-container">
@@ -89,13 +140,15 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKOj-VImQJKXeHA08DHCWPQoROM6m578I7cGvBMjW6bcDCiXnZ74jH7yMYVZhHYcMI4w/exec";
     const EXPIRE_TIME = 8 * 60 * 60 * 1000;
 
     const currentUser = localStorage.getItem("equipment_user");
     const currentRole = localStorage.getItem("equipment_role");
     const currentPermission = localStorage.getItem("equipment_permission") || "一般";
     const loginTime = localStorage.getItem("equipment_login_timestamp");
+
+    let currentFilter = "borrowed";
 
     function logout() {
         localStorage.clear();
@@ -113,7 +166,8 @@
             badge.innerText = `${currentRole} · 管理員`;
             badge.style.backgroundColor = "#fee2e2";
             badge.style.color = "#991b1b";
-            pageTitle.innerText = "📋 全部已借出設備清單（管理員）";
+            pageTitle.innerText = "📋 設備管理與狀態清單";
+            document.getElementById("admin-tabs").style.display = "flex";
         } else {
             badge.innerText = currentRole;
             badge.style.backgroundColor = "#e0e7ff";
@@ -122,30 +176,65 @@
         }
     }
 
+    function switchFilter(filterType, btnEl) {
+        currentFilter = filterType;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+        loadBorrowedList();
+    }
+
+    // 管理員變更設備狀態
+    function changeEquipmentStatus(id, newStatus) {
+        let note = "";
+        if (newStatus === "維修中" || newStatus === "遺失") {
+            note = prompt(`請輸入將設備【${id}】標記為「${newStatus}」的原因或備註：`);
+            if (note === null) return; // 按取消則不執行
+        } else {
+            if (!confirm(`確定要將設備【${id}】恢復為「可借用」狀態嗎？`)) return;
+        }
+
+        const container = document.getElementById('list-container');
+        container.innerHTML = '<div class="empty-msg">更新狀態中...</div>';
+
+        const updateUrl = `${API_URL}?action=updateStatus&id=${encodeURIComponent(id)}&status=${encodeURIComponent(newStatus)}&note=${encodeURIComponent(note)}&user=${encodeURIComponent(currentUser)}`;
+
+        fetch(updateUrl, { method: "GET", redirect: "follow" })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                loadBorrowedList();
+            })
+            .catch(err => {
+                alert("❌ 狀態更新失敗，請稍後再試");
+                loadBorrowedList();
+            });
+    }
+
     function loadBorrowedList() {
         const container = document.getElementById('list-container');
         container.innerHTML = '<div class="empty-msg">資料載入中...</div>';
 
-        const fetchUrl = `${API_URL}?action=getBorrowedList&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&permission=${encodeURIComponent(currentPermission)}`;
+        const fetchUrl = `${API_URL}?action=getBorrowedList&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&permission=${encodeURIComponent(currentPermission)}&filter=${currentFilter}`;
 
         fetch(fetchUrl, { method: "GET", redirect: "follow" })
             .then(res => res.json())
             .then(data => {
                 if (!data || data.length === 0) {
                     const emptyText = currentPermission === "管理員" 
-                        ? "🎉 目前全系統沒有任何借出中的設備！" 
+                        ? "🎉 此分類目前沒有任何設備資料！" 
                         : "🎉 你目前沒有任何借用中的設備！";
                     container.innerHTML = `<div class="empty-msg">${emptyText}</div>`;
                     return;
                 }
 
+                const isAdmin = currentPermission === "管理員";
                 let html = `
                     <table class="equipment-table">
                         <thead>
                             <tr>
                                 <th>ID / 設備</th>
-                                <th>借用資訊</th>
-                                <th>狀態</th>
+                                <th>詳細資訊</th>
+                                <th>狀態${isAdmin ? ' / 管理' : ''}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -153,8 +242,37 @@
 
                 data.forEach(item => {
                     const fullName = (item.brand ? item.brand + ' ' : '') + item.name;
-                    const borrowerInfo = item.borrower ? `👤 ${item.borrower}` : '';
-                    const timeInfo = item.borrowTime ? `<div style="font-size:0.8rem; color:#6b7280; margin-top:2px;">🕒 ${item.borrowTime}</div>` : '';
+                    
+                    // 狀態徽章樣式
+                    let badgeClass = 'badge-borrowed';
+                    if (item.status === '可借用') badgeClass = 'badge-available';
+                    else if (item.status === '維修中') badgeClass = 'badge-repair';
+                    else if (item.status === '遺失') badgeClass = 'badge-lost';
+
+                    // 詳細資訊欄（顯示借用人時間 或 異常備註）
+                    let detailHtml = '';
+                    if (item.status === '借出中') {
+                        detailHtml += item.borrower ? `<div>👤 ${item.borrower}</div>` : '';
+                        detailHtml += item.borrowTime ? `<div style="font-size:0.8rem; color:#6b7280;">🕒 ${item.borrowTime}</div>` : '';
+                    } else if (item.status === '維修中' || item.status === '遺失') {
+                        detailHtml += `<div style="color:#991b1b; font-size:0.85rem;">📝 ${item.note || '無備註'}</div>`;
+                    } else {
+                        detailHtml += `<div style="color:#6b7280; font-size:0.85rem;">正常待命中</div>`;
+                    }
+
+                    // 管理員操作按鈕
+                    let adminBtns = '';
+                    if (isAdmin) {
+                        if (item.status === '維修中' || item.status === '遺失') {
+                            adminBtns = `<div><button class="action-btn btn-fix" onclick="changeEquipmentStatus('${item.id}', '可借用')">✅ 恢復可借用</button></div>`;
+                        } else if (item.status === '可借用') {
+                            adminBtns = `
+                                <div>
+                                    <button class="action-btn btn-broken" onclick="changeEquipmentStatus('${item.id}', '維修中')">🔧 報修</button>
+                                    <button class="action-btn btn-lost" onclick="changeEquipmentStatus('${item.id}', '遺失')">❓ 遺失</button>
+                                </div>`;
+                        }
+                    }
 
                     html += `
                         <tr>
@@ -162,11 +280,11 @@
                                 <b>${item.id}</b>
                                 <div style="margin-top:2px;">${fullName}</div>
                             </td>
+                            <td>${detailHtml}</td>
                             <td>
-                                ${borrowerInfo}
-                                ${timeInfo}
+                                <span class="badge ${badgeClass}">${item.status}</span>
+                                ${adminBtns}
                             </td>
-                            <td><span class="badge">${item.status}</span></td>
                         </tr>
                     `;
                 });
