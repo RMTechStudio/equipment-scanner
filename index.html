@@ -231,7 +231,7 @@
         const actionText = isBroken ? '歸還並報修' : (currentMode === 'borrow' ? '借用' : '歸還');
         updateStatusText(`讀取成功！ID: ${targetId}\n處理【${actionText}】中...`, 'status-loading');
 
-        const requestUrl = `${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&broken=${isBroken}&note=${encodeURIComponent(noteText)}`;
+        const requestUrl = `${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&permission=${encodeURIComponent(currentPermission)}&broken=${isBroken}&note=${encodeURIComponent(noteText)}`;
 
         fetch(requestUrl, {
             method: "GET",
