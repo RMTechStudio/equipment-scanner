@@ -65,6 +65,36 @@
         }
         .mode-btn.active-borrow { background: var(--primary-color); color: white; }
         .mode-btn.active-return { background: var(--success-color); color: white; }
+        
+        /* 歸還報修區塊樣式 */
+        .report-box {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 16px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .report-box label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #991b1b;
+            cursor: pointer;
+        }
+        .report-box input[type="text"] {
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
         select { width: 100%; padding: 10px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #d1d5db; margin-bottom: 16px; }
         #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; }
         #result {
@@ -100,6 +130,15 @@
         <button id="btn-return" class="mode-btn" onclick="setMode('return')">📥 設備歸還</button>
     </div>
 
+    <!-- 歸還時顯示的異常報修選項 -->
+    <div class="report-box" id="report-box">
+        <label>
+            <input type="checkbox" id="broken-check" onchange="toggleBrokenInput()">
+            ⚠️ 設備異常／損壞，需同時報修（掃描後將鎖定借用）
+        </label>
+        <input type="text" id="broken-note" placeholder="請簡述故障原因（例如：無法開機、螢幕破裂）">
+    </div>
+
     <select id="camera-select">
         <option value="">載入相機清單中...</option>
     </select>
@@ -109,7 +148,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxj2f3CbNb0Nb1_aCvqQfeznorTDqwy7wOaTwi7wr0J_yyOCzBVelrp2yHdnmMEpSY6Ig/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzKOj-VImQJKXeHA08DHCWPQoROM6m578I7cGvBMjW6bcDCiXnZ74jH7yMYVZhHYcMI4w/exec";
     const EXPIRE_TIME = 8 * 60 * 60 * 1000;
 
     const currentUser = localStorage.getItem("equipment_user");
@@ -133,7 +172,7 @@
             badge.innerText = `${currentRole} · 管理員`;
             badge.style.backgroundColor = "#fee2e2";
             badge.style.color = "#991b1b";
-            listLink.innerText = "📋 全部借出清單 ↗";
+            listLink.innerText = "📋 設備管理清單 ↗";
         } else {
             badge.innerText = currentRole;
             badge.style.backgroundColor = "#e0e7ff";
@@ -149,11 +188,27 @@
 
     const cameraSelect = document.getElementById('camera-select');
     const resultDiv = document.getElementById('result');
+    const reportBox = document.getElementById('report-box');
+    const brokenCheck = document.getElementById('broken-check');
+    const brokenNoteInput = document.getElementById('broken-note');
+
+    function toggleBrokenInput() {
+        brokenNoteInput.style.display = brokenCheck.checked ? 'block' : 'none';
+        if (!brokenCheck.checked) brokenNoteInput.value = '';
+    }
 
     function setMode(mode) {
         currentMode = mode;
         document.getElementById('btn-borrow').className = mode === 'borrow' ? 'mode-btn active-borrow' : 'mode-btn';
         document.getElementById('btn-return').className = mode === 'return' ? 'mode-btn active-return' : 'mode-btn';
+        
+        // 切換到歸還模式時才顯示報修勾選框
+        reportBox.style.display = mode === 'return' ? 'block' : 'none';
+        if (mode === 'borrow') {
+            brokenCheck.checked = false;
+            toggleBrokenInput();
+        }
+
         if (!isProcessing) updateStatusText("請對準 QR Code 進行掃描...");
     }
 
@@ -170,10 +225,13 @@
         if (targetId.includes("text=")) targetId = targetId.split("text=")[1].split("&")[0];
         else if (targetId.includes("id=")) targetId = targetId.split("id=")[1].split("&")[0];
 
-        const actionText = currentMode === 'borrow' ? '借用' : '歸還';
+        const isBroken = currentMode === 'return' && brokenCheck.checked;
+        const noteText = isBroken ? brokenNoteInput.value.trim() : '';
+
+        const actionText = isBroken ? '歸還並報修' : (currentMode === 'borrow' ? '借用' : '歸還');
         updateStatusText(`讀取成功！ID: ${targetId}\n處理【${actionText}】中...`, 'status-loading');
 
-        const requestUrl = `${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}`;
+        const requestUrl = `${API_URL}?id=${encodeURIComponent(targetId)}&action=${currentMode}&user=${encodeURIComponent(currentUser)}&role=${encodeURIComponent(currentRole)}&broken=${isBroken}&note=${encodeURIComponent(noteText)}`;
 
         fetch(requestUrl, {
             method: "GET",
@@ -181,8 +239,15 @@
         })
         .then(res => res.text())
         .then(text => {
-            const isSuccess = text.includes("成功");
+            const isSuccess = text.includes("成功") || text.includes("完成");
             updateStatusText(text, isSuccess ? 'status-success' : 'status-error');
+            
+            // 成功後重置報修勾選框，避免誤把下一台機器也報修
+            if (isSuccess && isBroken) {
+                brokenCheck.checked = false;
+                toggleBrokenInput();
+            }
+
             setTimeout(() => {
                 isProcessing = false;
                 updateStatusText("請對準下一個 QR Code 進行掃描...");
